@@ -1,15 +1,15 @@
 /*
  * Copyright (C) 2011 Keijiro Takahashi
  * Copyright (C) 2012 GREE, Inc.
- * 
+ *
  * This software is provided 'as-is', without any express or implied
  * warranty.  In no event will the authors be held liable for any damages
  * arising from the use of this software.
- * 
+ *
  * Permission is granted to anyone to use this software for any purpose,
  * including commercial applications, and to alter it and redistribute it
  * freely, subject to the following restrictions:
- * 
+ *
  * 1. The origin of this software must not be misrepresented; you must not
  *    claim that you wrote the original software. If you use this software
  *    in a product, an acknowledgment in the product documentation would be
@@ -36,14 +36,14 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (id)initWithGameObjectName:(const char *)gameObjectName_
 {
 	self = [super init];
-
+    
 	UIView *view = UnityGetGLViewController().view;
 	webView = [[UIWebView alloc] initWithFrame:view.frame];
 	webView.delegate = self;
 	webView.hidden = YES;
 	[view addSubview:webView];
 	gameObjectName = [[NSString stringWithUTF8String:gameObjectName_] retain];
-
+    
 	return self;
 }
 
@@ -60,7 +60,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 	NSString *url = [[request URL] absoluteString];
 	if ([url hasPrefix:@"unity:"]) {
 		UnitySendMessage([gameObjectName UTF8String],
-			"CallFromJS", [[url substringFromIndex:6] UTF8String]);
+                         "CallFromJS", [[url substringFromIndex:6] UTF8String]);
 		return NO;
 	} else {
 		return YES;
@@ -70,7 +70,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (void)setMargins:(int)left top:(int)top right:(int)right bottom:(int)bottom
 {
 	UIView *view = UnityGetGLViewController().view;
-
+    
 	CGRect frame = view.frame;
 	CGFloat scale = view.contentScaleFactor;
 	frame.size.width -= (left + right) / scale;
@@ -78,6 +78,17 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 	frame.origin.x += left / scale;
 	frame.origin.y += top / scale;
 	webView.frame = frame;
+}
+
+- (void)setFrame:(int)x positionY:(int)y width:(int)width height:(int)height
+{
+    CGRect frame = webView.frame;
+    CGRect screen = [[UIScreen mainScreen] bounds];
+    frame.origin.x = x + ((screen.size.width - width)/2);
+    frame.origin.y = -y + ((screen.size.height - height)/2);
+    frame.size.width = width;
+    frame.size.height = height;
+    webView.frame = frame;
 }
 
 - (void)setVisibility:(BOOL)visibility
@@ -104,11 +115,11 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 extern "C" {
 	void *_WebViewPlugin_Init(const char *gameObjectName);
 	void _WebViewPlugin_Destroy(void *instance);
-	void _WebViewPlugin_SetMargins(
-		void *instance, int left, int top, int right, int bottom);
+	void _WebViewPlugin_SetMargins(void *instance, int left, int top, int right, int bottom);
 	void _WebViewPlugin_SetVisibility(void *instance, BOOL visibility);
 	void _WebViewPlugin_LoadURL(void *instance, const char *url);
 	void _WebViewPlugin_EvaluateJS(void *instance, const char *url);
+    void _WebViewPlugin_SetFrame(void* instace,int x,int y,int width,int height);
 }
 
 void *_WebViewPlugin_Init(const char *gameObjectName)
@@ -123,8 +134,7 @@ void _WebViewPlugin_Destroy(void *instance)
 	[webViewPlugin release];
 }
 
-void _WebViewPlugin_SetMargins(
-	void *instance, int left, int top, int right, int bottom)
+void _WebViewPlugin_SetMargins(void *instance, int left, int top, int right, int bottom)
 {
 	WebViewPlugin *webViewPlugin = (WebViewPlugin *)instance;
 	[webViewPlugin setMargins:left top:top right:right bottom:bottom];
@@ -146,4 +156,10 @@ void _WebViewPlugin_EvaluateJS(void *instance, const char *js)
 {
 	WebViewPlugin *webViewPlugin = (WebViewPlugin *)instance;
 	[webViewPlugin evaluateJS:js];
+}
+
+void _WebViewPlugin_SetFrame(void* instance,int x,int y,int width,int height)
+{
+    WebViewPlugin* webViewPlugin = (WebViewPlugin*)instance;
+    [webViewPlugin setFrame:x positionY:y width:width height: height];
 }

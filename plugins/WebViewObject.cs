@@ -62,8 +62,7 @@ public class WebViewObject : MonoBehaviour
 	[DllImport("WebView")]
 	private static extern int _WebViewPlugin_Destroy(IntPtr instance);
 	[DllImport("WebView")]
-	private static extern void _WebViewPlugin_SetRect(
-		IntPtr instance, int width, int height);
+	private static extern void _WebViewPlugin_SetRect(IntPtr instance, int width, int height);
 	[DllImport("WebView")]
 	private static extern void _WebViewPlugin_SetVisibility(
 		IntPtr instance, bool visibility);
@@ -77,6 +76,8 @@ public class WebViewObject : MonoBehaviour
 	private static extern void _WebViewPlugin_Update(IntPtr instance,
 		int x, int y, float deltaY, bool down, bool press, bool release,
 		bool keyPress, short keyCode, string keyChars, int textureId);
+	
+	
 #elif UNITY_IPHONE
 	[DllImport("__Internal")]
 	private static extern IntPtr _WebViewPlugin_Init(string gameObject);
@@ -94,6 +95,9 @@ public class WebViewObject : MonoBehaviour
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_EvaluateJS(
 		IntPtr instance, string url);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetFrame(
+		IntPtr instance, int x , int y , int width , int height);
 #endif
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
@@ -105,6 +109,7 @@ public class WebViewObject : MonoBehaviour
 			w <<= 1;
 		while (h < height)
 			h <<= 1;
+		Debug.Log ("w" +w +" h" + h);
 		rect = new Rect(x, y, width, height);
 		texture = new Texture2D(w, h, TextureFormat.ARGB32, false);
 	}
@@ -114,7 +119,7 @@ public class WebViewObject : MonoBehaviour
 	{
 		callback = cb;
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
-		CreateTexture(0, 0, Screen.width, Screen.height);
+		CreateTexture(0, 0, Screen.width/2, Screen.height/2);
 		webView = _WebViewPlugin_Init(name, Screen.width, Screen.height,
 			Application.platform == RuntimePlatform.OSXEditor);
 #elif UNITY_IPHONE
@@ -123,6 +128,19 @@ public class WebViewObject : MonoBehaviour
 		offset = new Vector2(0, 0);
 		webView = new AndroidJavaObject("net.gree.unitywebview.WebViewPlugin");
 		webView.Call("Init", name);
+#endif
+	}
+	
+	public void SetCenterPositionWithScale(Vector2 center , Vector2 scale)
+	{
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+		rect.x = center.x + (Screen.width - scale.x)/2;
+		rect.y = center.y + (Screen.height - scale.y)/2;
+		rect.width = scale.x;
+		rect.height = scale.y;
+#elif UNITY_IPHONE
+		if(webView == null) return;
+		_WebViewPlugin_SetFrame(webView,(int)center.x,(int)center.y,(int)scale.x,(int)scale.y);
 #endif
 	}
 
@@ -233,11 +251,13 @@ public class WebViewObject : MonoBehaviour
 		bool keyPress = false;
 		string keyChars = "";
 		short keyCode = 0;
-		if (inputString.Length > 0) {
-			keyPress = true;
-			keyChars = inputString.Substring(0, 1);
-			keyCode = (short)inputString[0];
-			inputString = inputString.Substring(1);
+		if(inputString != null){
+			if (inputString.Length > 0) {
+				keyPress = true;
+				keyChars = inputString.Substring(0, 1);
+				keyCode = (short)inputString[0];
+				inputString = inputString.Substring(1);
+			}
 		}
 		_WebViewPlugin_Update(webView,
 			(int)(pos.x - rect.x), (int)(pos.y - rect.y), deltaY,
