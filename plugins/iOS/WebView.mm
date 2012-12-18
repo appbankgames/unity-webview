@@ -82,8 +82,9 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)setFrame:(int)x positionY:(int)y width:(int)width height:(int)height
 {
+    UIView* view = UnityGetGLViewController().view;
     CGRect frame = webView.frame;
-    CGRect screen = [[UIScreen mainScreen] bounds];
+    CGRect screen = view.bounds;
     frame.origin.x = x + ((screen.size.width - width)/2);
     frame.origin.y = -y + ((screen.size.height - height)/2);
     frame.size.width = width;
@@ -160,6 +161,7 @@ void _WebViewPlugin_EvaluateJS(void *instance, const char *js)
 
 void _WebViewPlugin_SetFrame(void* instance,int x,int y,int width,int height)
 {
+    CGFloat scaleFactor = UnityGetGLViewController().view.contentScaleFactor;
     WebViewPlugin* webViewPlugin = (WebViewPlugin*)instance;
-    [webViewPlugin setFrame:x positionY:y width:width height: height];
+    [webViewPlugin setFrame:x/scaleFactor positionY:y/scaleFactor width:width/scaleFactor height: height/scaleFactor];
 }
