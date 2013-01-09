@@ -24,6 +24,31 @@
 extern UIViewController *UnityGetGLViewController();
 extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
+#pragma mark - UIWebView Hacks for iOS
+
+@interface UIWebView (ABGUIScrollViewHack)
+@property (nonatomic, retain, readonly) UIScrollView *ABG_scrollView;
+@end
+
+@implementation UIWebView (ABGUIScrollViewHack)
+- (UIScrollView *)ABG_scrollView
+{
+    if ([self respondsToSelector:@selector(scrollView)]) {
+        return [self scrollView];
+    }
+    
+    for (id subview in self.subviews) {
+        if ([[subview class] isSubclassOfClass: [UIScrollView class]]) {
+            return subview;
+        }
+    }
+    
+    return nil;
+}
+@end
+
+#pragma mark - Objective-C Implementation
+
 @interface WebViewPlugin : NSObject<UIWebViewDelegate>
 {
 	UIWebView *webView;
@@ -44,8 +69,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 	webView = [[UIWebView alloc] initWithFrame:view.frame];
 	webView.delegate = self;
 	webView.hidden = YES;
-    webView.scrollView.alwaysBounceVertical = NO;
-    webView.scrollView.delaysContentTouches = NO;
+    webView.ABG_scrollView.alwaysBounceVertical = NO;
+    webView.ABG_scrollView.delaysContentTouches = NO;
 	[view addSubview:webView];
 	gameObjectName = [[NSString stringWithUTF8String:gameObjectName_] retain];
     [self setScrollable:false];
@@ -89,7 +114,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)webViewDidStartLoad:(UIWebView *)webView
 {
-    self->webView.scrollView.hidden = YES;
+    self->webView.ABG_scrollView.hidden = YES;
     UIActivityIndicatorView *indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
     indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
     self.indicator = indicator;
@@ -126,7 +151,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
-    self->webView.scrollView.hidden = NO;
+    self->webView.ABG_scrollView.hidden = NO;
     [self.indicator stopAnimating];
     [self.indicator removeFromSuperview];
     [self.label removeFromSuperview];
@@ -172,7 +197,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 }
 -(void)setScrollable:(BOOL)isScrollable
 {
-    webView.scrollView.scrollEnabled = isScrollable ? YES : NO;
+    webView.ABG_scrollView.scrollEnabled = isScrollable ? YES : NO;
 }
 
 -(void)reloadURL{
@@ -191,8 +216,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 }
 
 -(void)setBounceModeOfVertical:(bool)vertical Horizontal:(bool)horizontal{
-    webView.scrollView.alwaysBounceVertical = vertical;
-    webView.scrollView.alwaysBounceHorizontal = horizontal;
+    webView.ABG_scrollView.alwaysBounceVertical = vertical;
+    webView.ABG_scrollView.alwaysBounceHorizontal = horizontal;
 }
 
 - (void)evaluateJS:(const char *)js
@@ -202,6 +227,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 }
 
 @end
+
+#pragma mark - Unity Plugin
 
 extern "C" {
 	void *_WebViewPlugin_Init(const char *gameObjectName);
