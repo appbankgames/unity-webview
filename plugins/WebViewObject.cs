@@ -109,7 +109,7 @@ public class WebViewObject : MonoBehaviour
 			w <<= 1;
 		while (h < height)
 			h <<= 1;
-		Debug.Log ("w" +w +" h" + h);
+		//Debug.Log ("w" +w +" h" + h);
 		rect = new Rect(x, y, width, height);
 		texture = new Texture2D(w, h, TextureFormat.ARGB32, false);
 	}
@@ -131,17 +131,35 @@ public class WebViewObject : MonoBehaviour
 #endif
 	}
 	
-	public void SetCenterPositionWithScale(Vector2 center , Vector2 scale)
+	// TODO: Should rename to SetCenterPositionWithSize or something
+	// Set the position and size of this web view.
+	// The origin of the view is Top-Left (same to the iOS/Android) even if its running on OS X.
+	public void SetCenterPositionWithScale(Vector2 center, Vector2 size)
 	{
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
-		rect.x = center.x + (Screen.width - scale.x)/2;
-		rect.y = center.y + (Screen.height - scale.y)/2;
-		rect.width = scale.x;
-		rect.height = scale.y;
+		rect.x = center.x + (Screen.width - size.x)/2;
+		rect.y = center.y + (Screen.height - size.y)/2;
+		rect.width = size.x;
+		rect.height = size.y;
+		// TODO: Not implemented properly.
+		// Needs to call CreateTexture and _WebViewPlugin_SetRect
+		// rather than updating rect directory here.
+		// Sample implementation (SetMargin()) is like below:
+		// 
+		//int width = Screen.width - (left + right);
+		//int height = Screen.height - (bottom + top);
+		//CreateTexture(left, bottom, width, height);
+		//_WebViewPlugin_SetRect(webView, width, height);
 #elif UNITY_IPHONE
-		if(webView == null) return;
-		_WebViewPlugin_SetFrame(webView,(int)center.x,(int)center.y,(int)scale.x,(int)scale.y);
+		if (webView == IntPtr.Zero)
+			return;
+		_WebViewPlugin_SetFrame(webView,(int)center.x,(int)center.y,(int)size.x,(int)size.y);
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
 #endif
+
 	}
 
 	void OnDestroy()
