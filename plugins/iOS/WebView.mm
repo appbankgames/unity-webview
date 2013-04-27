@@ -51,7 +51,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 @interface WebViewPlugin : NSObject<UIWebViewDelegate>
 @property (nonatomic, retain) UIWebView *webView;
-@property (nonatomic, retain) NSString *gameObjectName;
+@property (nonatomic, copy) NSString *gameObjectName;
 @property (nonatomic, retain) UIActivityIndicatorView *indicator;
 @property (nonatomic, retain) UILabel *label;
 @end
@@ -61,26 +61,30 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (id)initWithGameObjectName:(const char *)gameObjectName_
 {
     self = [super init];
+    if (self) {
+        self.webView = [[[UIWebView alloc] initWithFrame:view.frame] autorelease];
+        self.webView.delegate = self;
+        self.webView.hidden = YES;
+        self.webView.ABG_scrollView.alwaysBounceVertical = NO;
+        [self setScrollable:NO];
+        UIView *view = UnityGetGLViewController().view;
+        [view addSubview:self.webView];
+        
+        self.gameObjectName = [NSString stringWithUTF8String:gameObjectName_];
+    }
     
-    UIView *view = UnityGetGLViewController().view;
-    _webView = [[UIWebView alloc] initWithFrame:view.frame];
-    _webView.delegate = self;
-    _webView.hidden = YES;
-    _webView.ABG_scrollView.alwaysBounceVertical = NO;
-    [view addSubview:_webView];
-    _gameObjectName = [[NSString stringWithUTF8String:gameObjectName_] retain];
-    [self setScrollable:false];
     return self;
 }
 
 - (void)dealloc
 {
-    _indicator = nil;
-    _webView.delegate = nil;
-    [_webView stopLoading];
-    [_webView removeFromSuperview];
-    [_webView release];
-    [_gameObjectName release];
+    self.indicator = nil;
+    self.webView.delegate = nil;
+    [self.webView stopLoading];
+    [self.webView removeFromSuperview];
+    self.webView = nil;
+    self.gameObjectName = nil;
+    self.label = nil;
     [super dealloc];
 }
 
@@ -89,15 +93,15 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     NSString *url = [[request URL] absoluteString];
     NSString *scheme = [[request URL] scheme];
     if ([scheme isEqualToString:@"dandg"]) {
-        UnitySendMessage([_gameObjectName UTF8String],
+        UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [url UTF8String]);
         return NO;
     }else if ([scheme isEqualToString:@"ohttp"]) {
-        UnitySendMessage([_gameObjectName UTF8String],
+        UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [[url substringFromIndex:6] UTF8String]);
         return NO;
     } else if ([scheme isEqualToString:@"ohttps"]) {
-        UnitySendMessage([_gameObjectName UTF8String],
+        UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [[url substringFromIndex:7]UTF8String]);
         return NO;
     }
@@ -108,40 +112,37 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)webViewDidStartLoad:(UIWebView *)webView
 {
-    _webView.ABG_scrollView.hidden = YES;
-    if(!_indicator){
-        UIActivityIndicatorView *indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
-        indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
-        _indicator = indicator;
-        [_webView addSubview:_indicator];
-        CGRect webViewBounds = _webView.bounds;
-        [indicator setCenter:CGPointMake(webViewBounds.size.width / 2, webViewBounds.size.height / 2)];
-        [_indicator startAnimating];
+    self.webView.ABG_scrollView.hidden = YES;
+    if(!self.indicator){
+        self.indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
+        self.indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
+        [self.webView addSubview:self.indicator];
+        self.indicator.center = self.webView.center;
+        [self.indicator startAnimating];
     }
-    if(!_label){
-        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, _webView.bounds.size.width, _webView.bounds.size.height * 0.7)];
-        _label = label;
-        [_webView addSubview:label];
-        label.text = @"Loading...";
-        [self setLabelStatusWithColor:[UIColor whiteColor] BackGroundColor:[UIColor colorWithWhite:1.0 alpha:0] Alignment:UITextAlignmentCenter Font:[UIFont fontWithName:@"HiraKakuProN-W6" size:16]];
-        
+    if(!self.label){
+        self.label = [[[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.webView.bounds.size.width, self.webView.bounds.size.height * 0.7f)] autorelease];
+        [self.webView addSubview:self.label];
+        self.label.text = @"Loading...";
+        [self setLabelStatusWithColor:[UIColor whiteColor]
+                      BackGroundColor:[UIColor colorWithWhite:1.0f alpha:0]
+                            Alignment:UITextAlignmentCenter
+                                 Font:[UIFont fontWithName:@"HiraKakuProN-W6" size:16.0f]];
         CGSize offset;
-        offset.width = 1;
-        offset.height = 1;
+        offset.width = 1.0f;
+        offset.height = 1.0f;
         [self setLabelShadowWithColor:[UIColor blackColor] Offset:offset];
-        
-        [label release];
     }
 }
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
-    _webView.ABG_scrollView.hidden = NO;
-    [_indicator stopAnimating];
-    [_indicator removeFromSuperview];
-    [_label removeFromSuperview];
-    _label = nil;
-    _indicator = nil;
+    self.webView.ABG_scrollView.hidden = NO;
+    [self.indicator stopAnimating];
+    [self.indicator removeFromSuperview];
+    [self.label removeFromSuperview];
+    self.label = nil;
+    self.indicator = nil;
 }
 
 - (void)loadURL:(const char *)url
@@ -150,68 +151,68 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     NSURL *nsurl = [NSURL URLWithString:urlStr];
     
     NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]];
-    [_webView loadRequest:request];
+    [self.webView loadRequest:request];
     request = [NSURLRequest requestWithURL:nsurl];
-    [_webView loadRequest:request];
+    [self.webView loadRequest:request];
 }
 
 -(void)reloadURL{
-    [_webView reload];
+    [self.webView reload];
 }
 
 - (void)evaluateJS:(const char *)js
 {
     NSString *jsStr = [NSString stringWithUTF8String:js];
-    [_webView stringByEvaluatingJavaScriptFromString:jsStr];
+    [self.webView stringByEvaluatingJavaScriptFromString:jsStr];
 }
 
 - (void)setVisibility:(BOOL)visibility
 {
-    _webView.hidden = visibility ? NO : YES;
+    self.webView.hidden = !visibility;
 }
 
 -(void)setScrollable:(BOOL)isScrollable
 {
-    _webView.ABG_scrollView.scrollEnabled = isScrollable ? YES : NO;
+    self.webView.ABG_scrollView.scrollEnabled = isScrollable;
 }
 
 -(void)setBounceModeOfVertical:(BOOL)vertical Horizontal:(BOOL)horizontal{
-    _webView.ABG_scrollView.alwaysBounceVertical = vertical;
-    _webView.ABG_scrollView.alwaysBounceHorizontal = horizontal;
+    self.webView.ABG_scrollView.alwaysBounceVertical = vertical;
+    self.webView.ABG_scrollView.alwaysBounceHorizontal = horizontal;
 }
 
 -(void)setDelaysContentTouchesEnable:(BOOL) deferrable{
-    _webView.ABG_scrollView.delaysContentTouches = deferrable;
+    self.webView.ABG_scrollView.delaysContentTouches = deferrable;
 }
 
 -(void) setLabelStatusWithColor:(UIColor*)color BackGroundColor:(UIColor*)bgColor Alignment:(UITextAlignment) alignment Font:(UIFont*)font{
-    _label.textColor = color;
-    _label.backgroundColor = bgColor;
-    _label.textAlignment = alignment;
-    _label.font = font;
+    self.label.textColor = color;
+    self.label.backgroundColor = bgColor;
+    self.label.textAlignment = alignment;
+    self.label.font = font;
 }
 
 -(void) setLabelShadowWithColor:(UIColor*)color Offset:(CGSize) offset{
-    _label.shadowColor = color;
-    _label.shadowOffset = offset;
+    self.label.shadowColor = color;
+    self.label.shadowOffset = offset;
 }
 
 -(void)setBackground:(BOOL)opaque Color:(UIColor*)color
 {
-    _webView.opaque = opaque;
-    _webView.backgroundColor = color;
+    self.webView.opaque = opaque;
+    self.webView.backgroundColor = color;
 }
 
 - (void)setFrame:(NSInteger)x positionY:(NSInteger)y width:(NSInteger)width height:(NSInteger)height
 {
     UIView* view = UnityGetGLViewController().view;
-    CGRect frame = _webView.frame;
+    CGRect frame = self.webView.frame;
     CGRect screen = view.bounds;
     frame.origin.x = x + ((screen.size.width - width)/2);
     frame.origin.y = -y + ((screen.size.height - height)/2);
     frame.size.width = width;
     frame.size.height = height;
-    _webView.frame = frame;
+    self.webView.frame = frame;
 }
 
 - (void)setMargins:(NSInteger)left top:(NSInteger)top right:(NSInteger)right bottom:(NSInteger)bottom
@@ -224,7 +225,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     frame.size.height -= (top + bottom) / scale;
     frame.origin.x += left / scale;
     frame.origin.y += top / scale;
-    _webView.frame = frame;
+    self.webView.frame = frame;
     
 }
 
