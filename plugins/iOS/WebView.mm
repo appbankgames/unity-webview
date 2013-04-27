@@ -76,6 +76,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (void)dealloc
 {
     _indicator = nil;
+    _webView.delegate = nil;
+    [_webView stopLoading];
     [_webView removeFromSuperview];
     [_webView release];
     [_gameObjectName release];
@@ -107,36 +109,39 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (void)webViewDidStartLoad:(UIWebView *)webView
 {
     _webView.ABG_scrollView.hidden = YES;
-    UIActivityIndicatorView *indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
-    indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
-    _indicator = indicator;
-    [_webView addSubview:_indicator];
-    CGRect webViewBounds = _webView.bounds;
-    [indicator setCenter:CGPointMake(webViewBounds.size.width / 2, webViewBounds.size.height / 2)];
-    [_indicator startAnimating];
-    
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, _webView.bounds.size.width, _webView.bounds.size.height * 0.7)];
-    _label = label;
-    [_webView addSubview:label];
-    label.text = @"Loading...";
-    [self setLabelStatusWithColor:[UIColor whiteColor] BackGroundColor:[UIColor colorWithWhite:1.0 alpha:0] Alignment:UITextAlignmentCenter Font:[UIFont fontWithName:@"HiraKakuProN-W6" size:16]];
-    
-    CGSize offset;
-    offset.width = 1;
-    offset.height = 1;
-    [self setLabelShadowWithColor:[UIColor blackColor] Offset:offset];
-    
-    [label release];
+    if(!_indicator){
+        UIActivityIndicatorView *indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
+        indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
+        _indicator = indicator;
+        [_webView addSubview:_indicator];
+        CGRect webViewBounds = _webView.bounds;
+        [indicator setCenter:CGPointMake(webViewBounds.size.width / 2, webViewBounds.size.height / 2)];
+        [_indicator startAnimating];
+    }
+    if(!_label){
+        UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, _webView.bounds.size.width, _webView.bounds.size.height * 0.7)];
+        _label = label;
+        [_webView addSubview:label];
+        label.text = @"Loading...";
+        [self setLabelStatusWithColor:[UIColor whiteColor] BackGroundColor:[UIColor colorWithWhite:1.0 alpha:0] Alignment:UITextAlignmentCenter Font:[UIFont fontWithName:@"HiraKakuProN-W6" size:16]];
+        
+        CGSize offset;
+        offset.width = 1;
+        offset.height = 1;
+        [self setLabelShadowWithColor:[UIColor blackColor] Offset:offset];
+        
+        [label release];
+    }
 }
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
     _webView.ABG_scrollView.hidden = NO;
-    [self.indicator stopAnimating];
-    [self.indicator removeFromSuperview];
-    [self.label removeFromSuperview];
-    self.label = nil;
-    self.indicator = nil;
+    [_indicator stopAnimating];
+    [_indicator removeFromSuperview];
+    [_label removeFromSuperview];
+    _label = nil;
+    _indicator = nil;
 }
 
 - (void)loadURL:(const char *)url
