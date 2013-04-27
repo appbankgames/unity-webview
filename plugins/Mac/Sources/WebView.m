@@ -156,6 +156,11 @@ static void UnitySendMessage(
 	[[webView mainFrame] loadRequest:request];
 }
 
+- (void)reloadURL
+{
+    [[webView mainFrame] reload];
+}
+
 - (void)evaluateJS:(const char *)js
 {
 	NSString *jsStr = [NSString stringWithUTF8String:js];
@@ -267,6 +272,7 @@ void _WebViewPlugin_Destroy(void *instance);
 void _WebViewPlugin_SetRect(void *instance, int width, int height);
 void _WebViewPlugin_SetVisibility(void *instance, BOOL visibility);
 void _WebViewPlugin_LoadURL(void *instance, const char *url);
+void _WebViewPlugin_ReloadURL(void *instance);
 void _WebViewPlugin_EvaluateJS(void *instance, const char *url);
 void _WebViewPlugin_Update(void *instance, int x, int y, float deltaY,
 	BOOL buttonDown, BOOL buttonPress, BOOL buttonRelease,
@@ -312,6 +318,12 @@ void _WebViewPlugin_LoadURL(void *instance, const char *url)
 {
 	WebViewPlugin *webViewPlugin = (WebViewPlugin *)instance;
 	[webViewPlugin loadURL:url];
+}
+
+void _WebViewPlugin_ReloadURL(void *instance)
+{
+	WebViewPlugin *webViewPlugin = (WebViewPlugin *)instance;
+	[webViewPlugin reloadURL];
 }
 
 void _WebViewPlugin_EvaluateJS(void *instance, const char *js)
