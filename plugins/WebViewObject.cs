@@ -67,8 +67,14 @@ public class WebViewObject : MonoBehaviour
 	private static extern void _WebViewPlugin_SetVisibility(
 		IntPtr instance, bool visibility);
 	[DllImport("WebView")]
+	private static extern void _WebViewPlugin_SetBackgroundColor(
+		IntPtr instance,float r, float g, float b, float a, bool opaque);
+	[DllImport("WebView")]
 	private static extern void _WebViewPlugin_LoadURL(
 		IntPtr instance, string url);
+	[DllImport("WebView")]
+	private static extern void _WebViewPlugin_ReloadURL(
+		IntPtr instance);
 	[DllImport("WebView")]
 	private static extern void _WebViewPlugin_EvaluateJS(
 		IntPtr instance, string url);
@@ -90,8 +96,14 @@ public class WebViewObject : MonoBehaviour
 	private static extern void _WebViewPlugin_SetVisibility(
 		IntPtr instance, bool visibility);
 	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetBackgroundColor(
+		IntPtr instance,float r, float g, float b, float a, bool opaque);
+	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_LoadURL(
 		IntPtr instance, string url);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_ReloadURL(
+		IntPtr instance);
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_EvaluateJS(
 		IntPtr instance, string url);
@@ -99,11 +111,7 @@ public class WebViewObject : MonoBehaviour
 	private static extern void _WebViewPlugin_SetFrame(
 		IntPtr instance, int x , int y , int width , int height);
 	[DllImport("__Internal")]
-	private static extern void _WebViewPlugin_SetBackgroundColor(IntPtr instance,float r,float b,float g,float a,bool opaque);
-	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_SetScrollable(IntPtr instance, bool scrollable);
-	[DllImport("__Internal")]
-	private static extern void _WebViewPlugin_ReloadURL(IntPtr instance);
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_SetBounceMode(IntPtr instance,bool vertical,bool horizontal);
 	[DllImport("__Internal")]
@@ -173,35 +181,58 @@ public class WebViewObject : MonoBehaviour
 	
 	public void SetBackgroundColor(Color color , bool opaque){
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
-
+		// TODO: Not implemented properly.
 #elif UNITY_IPHONE
-		if(webView == null) return;
+		if (webView == IntPtr.Zero)
+			return;
 		_WebViewPlugin_SetBackgroundColor(webView,color.r,color.g,color.b,color.a,opaque);
-#endif	
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
+#endif
 	}
 	
 	public void SetScrollable(bool scrollable){
-		#if UNITY_EDITOR || UNITY_STANDALONE_OSX
-
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+		// Do nothing on OS X
 #elif UNITY_IPHONE
-		if(webView == null) return;
+		if (webView == IntPtr.Zero)
+			return;
 		_WebViewPlugin_SetScrollable(webView,scrollable);
-#endif	
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
+#endif
+
 	}
 	
 	public void SetBounceMode(bool vertical,bool horizontal){
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
+		// Do nothing on OS X
 #elif UNITY_IPHONE
-		if(webView == null) return;
-			_WebViewPlugin_SetBounceMode(webView,vertical,horizontal);
+		if (webView == IntPtr.Zero)
+			return;
+		_WebViewPlugin_SetBounceMode(webView,vertical,horizontal);
+#elif UNITY_ANDROID
+			if (webView == null)
+				return;
+			// TODO: Not implemented in Android
 #endif
 	}
 	
 	public void SetDelaysTouchesEnable(bool defferrable){
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
-#elif UNITY_IPHONE	
-		if(webView == null) return;
-			_WebViewPlugin_SetDelaysTouchEnable(webView,defferrable);
+		// Do nothing on OS X
+#elif UNITY_IPHONE
+		if (webView == IntPtr.Zero)
+			return;
+		_WebViewPlugin_SetDelaysTouchEnable(webView,defferrable);
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
 #endif
 	}
 	void OnDestroy()
@@ -241,14 +272,6 @@ public class WebViewObject : MonoBehaviour
 		webView.Call("SetMargins", left, top, right, bottom);
 #endif
 	}
-	
-	public void ReloadURL(){
-#if UNITY_EDITOR || UNITY_STANDALONE_OSX
-#elif UNITY_IPHONE
-		if(webView == null)return;
-			_WebViewPlugin_ReloadURL(webView);
-#endif
-	}
 
 	public void SetVisibility(bool v)
 	{
@@ -278,6 +301,18 @@ public class WebViewObject : MonoBehaviour
 		if (webView == null)
 			return;
 		webView.Call("LoadURL", url);
+#endif
+	}
+
+	public void ReloadURL(){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+		if (webView == IntPtr.Zero)
+			return;
+		_WebViewPlugin_ReloadURL(webView);
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
 #endif
 	}
 
