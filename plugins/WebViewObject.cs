@@ -98,6 +98,16 @@ public class WebViewObject : MonoBehaviour
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_SetFrame(
 		IntPtr instance, int x , int y , int width , int height);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetBackgroundColor(IntPtr instance,float r,float b,float g,float a,bool opaque);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetScrollable(IntPtr instance, bool scrollable);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_ReloadURL(IntPtr instance);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetBounceMode(IntPtr instance,bool vertical,bool horizontal);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_SetDelaysTouchEnable(IntPtr instance,bool deferrable);
 #endif
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
@@ -159,9 +169,41 @@ public class WebViewObject : MonoBehaviour
 			return;
 		// TODO: Not implemented in Android
 #endif
-
 	}
+	
+	public void SetBackgroundColor(Color color , bool opaque){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
 
+#elif UNITY_IPHONE
+		if(webView == null) return;
+		_WebViewPlugin_SetBackgroundColor(webView,color.r,color.g,color.b,color.a,opaque);
+#endif	
+	}
+	
+	public void SetScrollable(bool scrollable){
+		#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+
+#elif UNITY_IPHONE
+		if(webView == null) return;
+		_WebViewPlugin_SetScrollable(webView,scrollable);
+#endif	
+	}
+	
+	public void SetBounceMode(bool vertical,bool horizontal){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#elif UNITY_IPHONE
+		if(webView == null) return;
+			_WebViewPlugin_SetBounceMode(webView,vertical,horizontal);
+#endif
+	}
+	
+	public void SetDelaysTouchesEnable(bool defferrable){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#elif UNITY_IPHONE	
+		if(webView == null) return;
+			_WebViewPlugin_SetDelaysTouchEnable(webView,defferrable);
+#endif
+	}
 	void OnDestroy()
 	{
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
@@ -197,6 +239,14 @@ public class WebViewObject : MonoBehaviour
 			return;
 		offset = new Vector2(left, top);
 		webView.Call("SetMargins", left, top, right, bottom);
+#endif
+	}
+	
+	public void ReloadURL(){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX
+#elif UNITY_IPHONE
+		if(webView == null)return;
+			_WebViewPlugin_ReloadURL(webView);
 #endif
 	}
 
