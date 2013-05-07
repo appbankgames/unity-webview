@@ -96,13 +96,17 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
         UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [url UTF8String]);
         return NO;
-    }else if ([scheme isEqualToString:@"ohttp"]) {
+    } else if ([scheme isEqualToString:@"unity"]) {
         UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [[url substringFromIndex:6] UTF8String]);
         return NO;
+    } else if ([scheme isEqualToString:@"ohttp"]) {
+        UnitySendMessage([self.gameObjectName UTF8String],
+                         "CallFromJS", [url UTF8String]);
+        return NO;
     } else if ([scheme isEqualToString:@"ohttps"]) {
         UnitySendMessage([self.gameObjectName UTF8String],
-                         "CallFromJS", [[url substringFromIndex:7]UTF8String]);
+                         "CallFromJS", [url UTF8String]);
         return NO;
     }
     else {

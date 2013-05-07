@@ -321,6 +321,12 @@ public class WebViewObject : MonoBehaviour
 #endif
 	}
 
+	// Following URL schemes are supported for iOS/Mac
+	//   - unity:  (message = schemeless URL)
+	//   - dandg:  (message = complete URL with original scheme)
+	//   - ohttp:  (message = complete URL with original scheme)
+	//   - ohttps: (message = complete URL with original scheme)
+	// For Android, call window.Unity.call(message) from JavaScript, not to use URL
 	public void CallFromJS(string message)
 	{
 		if (callback != null)

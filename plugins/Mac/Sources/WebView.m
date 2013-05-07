@@ -123,14 +123,28 @@ static void UnitySendMessage(
 
 - (void)webView:(WebView *)sender decidePolicyForNavigationAction:(NSDictionary *)actionInformation request:(NSURLRequest *)request frame:(WebFrame *)frame decisionListener:(id<WebPolicyDecisionListener>)listener
 {
-	NSString *url = [[request URL] absoluteString];
-	if ([url hasPrefix:@"unity:"]) {
-		UnitySendMessage([gameObject UTF8String],
-			"CallFromJS", [[url substringFromIndex:6] UTF8String]);
-		[listener ignore];
-	} else {
-		[listener use];
-	}
+    NSString *url = [[request URL] absoluteString];
+    NSString *scheme = [[request URL] scheme];
+    if ([scheme isEqualToString:@"dandg"]) {
+        UnitySendMessage([gameObject UTF8String],
+                         "CallFromJS", [url UTF8String]);
+        [listener ignore];
+    } else if ([scheme isEqualToString:@"unity"]) {
+        UnitySendMessage([gameObject UTF8String],
+                         "CallFromJS", [[url substringFromIndex:6] UTF8String]);
+        [listener ignore];
+    } else if ([scheme isEqualToString:@"ohttp"]) {
+        UnitySendMessage([gameObject UTF8String],
+                         "CallFromJS", [url UTF8String]);
+        [listener ignore];
+    } else if ([scheme isEqualToString:@"ohttps"]) {
+        UnitySendMessage([gameObject UTF8String],
+                         "CallFromJS", [url UTF8String]);
+        [listener ignore];
+    }
+    else {
+        [listener use];
+    }
 }
 
 - (void)setRect:(int)width height:(int)height
