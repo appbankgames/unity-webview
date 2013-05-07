@@ -153,10 +153,11 @@ public class WebViewObject : MonoBehaviour
 	public void SetCenterPositionWithScale(Vector2 center, Vector2 size)
 	{
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
-		int left = center.x - size.x/2;
-		int bottom = center.y + size.y/2;
-		int width = size.x;
-		int height = size.y;
+		int left = (int)center.x + Screen.width/2 - (int)size.x/2;
+		int bottom = (int)center.y + (int)size.y/2;
+		
+		int width = (int)size.x;
+		int height = (int)size.y;
 		CreateTexture(left, bottom, width, height);
 		_WebViewPlugin_SetRect(webView, width, height);
 #elif UNITY_IPHONE
