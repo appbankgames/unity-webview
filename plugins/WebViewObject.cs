@@ -25,7 +25,9 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
-using Callback = System.Action<string>;
+using Callback = System.Action<string>;                    // message
+using OnFinishCallback = System.Action;                    // no arguments
+using OnFailCallback = System.Action<int, string, string>; // errorCode, errorDomain, errorMessage
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 public class UnitySendMessageDispatcher
@@ -42,6 +44,8 @@ public class UnitySendMessageDispatcher
 public class WebViewObject : MonoBehaviour
 {
 	Callback callback;
+	OnFinishCallback onFinishCallback;
+	OnFailCallback onFailCallback;
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 	IntPtr webView;
 	bool visibility;
@@ -130,9 +134,11 @@ public class WebViewObject : MonoBehaviour
 	}
 #endif
 
-	public void Init(Callback cb = null)
+	public void Init(Callback cb = null, OnFinishCallback finishcb = null, OnFailCallback failcb = null)
 	{
 		callback = cb;
+		onFinishCallback = finishcb;
+		onFailCallback = failcb;
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 		CreateTexture(0, 0, Screen.width/2, Screen.height/2);
 		webView = _WebViewPlugin_Init(name, Screen.width, Screen.height,
@@ -331,6 +337,33 @@ public class WebViewObject : MonoBehaviour
 	{
 		if (callback != null)
 			callback(message);
+	}
+
+	// TODO: Not implemented in Android
+	// TODO: Not implemented in Mac OS X
+	public void CallOnFinish(string _)
+	{
+		if (onFinishCallback != null)
+			onFinishCallback();
+	}
+
+	// TODO: Not implemented in Android
+	// TODO: Not implemented in Mac OS X
+	public void CallOnFail(string message)
+	{
+		if (onFailCallback != null)
+		{
+			int errorCode = 0;
+			string errorDomain = "";
+			string errorMessage = "";
+#if UNITY_IPHONE
+			string[] parameters = message.Split ('|');
+			errorCode = parameters[0].ToInt32();
+			errorDomain = parameters[1];
+			errorMessage = parameters[2];
+#endif
+			onFailCallback(errorCode, errorDomain, errorMessage);
+		}
 	}
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX

@@ -147,6 +147,25 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     [self.label removeFromSuperview];
     self.label = nil;
     self.indicator = nil;
+    
+    UnitySendMessage([self.gameObjectName UTF8String],
+                     "CallOnFinish",
+                     "");
+}
+
+- (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
+{
+    self.webView.ABG_scrollView.hidden = NO;
+    [self.indicator stopAnimating];
+    [self.indicator removeFromSuperview];
+    [self.label removeFromSuperview];
+    self.label = nil;
+    self.indicator = nil;
+    
+    NSString *message = [NSString stringWithFormat:@"%d|%@|%@", error.code, error.domain, error.localizedDescription];
+    UnitySendMessage([self.gameObjectName UTF8String],
+                     "CallOnFail",
+                     [message UTF8String]);
 }
 
 - (void)loadURL:(const char *)url
