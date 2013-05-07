@@ -62,12 +62,12 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 {
     self = [super init];
     if (self) {
+        UIView *view = UnityGetGLViewController().view;
         self.webView = [[[UIWebView alloc] initWithFrame:view.frame] autorelease];
         self.webView.delegate = self;
         self.webView.hidden = YES;
         self.webView.ABG_scrollView.alwaysBounceVertical = NO;
         [self setScrollable:NO];
-        UIView *view = UnityGetGLViewController().view;
         [view addSubview:self.webView];
         
         self.gameObjectName = [NSString stringWithUTF8String:gameObjectName_];
