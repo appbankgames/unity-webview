@@ -134,7 +134,7 @@ public class WebViewObject : MonoBehaviour
 	}
 #endif
 
-	public void Init(Callback cb = null, OnFinishCallback finishcb = null, OnFailCallback failcb = null)
+	public void Init(Callback cb, OnFinishCallback finishcb, OnFailCallback failcb)
 	{
 		callback = cb;
 		onFinishCallback = finishcb;
@@ -150,6 +150,11 @@ public class WebViewObject : MonoBehaviour
 		webView = new AndroidJavaObject("net.gree.unitywebview.WebViewPlugin");
 		webView.Call("Init", name);
 #endif
+	}
+	
+	public void Init(Callback cb)
+	{
+		Init(cb,null,null);
 	}
 	
 	// TODO: Should rename to SetCenterPositionWithSize or something, because
@@ -358,7 +363,7 @@ public class WebViewObject : MonoBehaviour
 			string errorMessage = "";
 #if UNITY_IPHONE
 			string[] parameters = message.Split ('|');
-			errorCode = parameters[0].ToInt32();
+			errorCode = int.Parse(parameters[0]);
 			errorDomain = parameters[1];
 			errorMessage = parameters[2];
 #endif
