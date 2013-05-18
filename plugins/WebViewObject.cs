@@ -165,7 +165,7 @@ public class WebViewObject : MonoBehaviour
 	{
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 		int left = (int)center.x + Screen.width/2 - (int)size.x/2;
-		int bottom = (int)center.y + (int)size.y/2;
+		int bottom = (int)center.y + Screen.height/2 - (int)size.y/2;
 		
 		int width = (int)size.x;
 		int height = (int)size.y;
