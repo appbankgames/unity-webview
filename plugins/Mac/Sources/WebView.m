@@ -92,6 +92,7 @@ static void UnitySendMessage(
 {
 	WebView *webView;
 	NSString *gameObject;
+	NSString *customScheme;
 	NSBitmapImageRep *bitmap;
 	int textureId;
 	BOOL needsDisplay;
@@ -100,7 +101,7 @@ static void UnitySendMessage(
 
 @implementation WebViewPlugin
 
-- (id)initWithGameObject:(const char *)gameObject_ width:(int)width height:(int)height
+- (id)initWithGameObject:(const char *)gameObject_ width:(int)width height:(int)height customScheme:(const char *)scheme
 {
 	self = [super init];
 	monoMethod = 0;
@@ -109,6 +110,14 @@ static void UnitySendMessage(
 	[webView setAutoresizingMask:(NSViewWidthSizable|NSViewHeightSizable)];
 	[webView setPolicyDelegate:self];
 	gameObject = [[NSString stringWithUTF8String:gameObject_] retain];
+	if(scheme != NULL)
+	{
+		customScheme = [[NSString stringWithUTF8String:scheme] retain];
+	}
+	else
+	{
+		customScheme = nil;
+	}
 
 	return self;
 }
@@ -117,6 +126,7 @@ static void UnitySendMessage(
 {
 	[webView release];
 	[gameObject release];
+	[customScheme release];
 	[bitmap release];
 	[super dealloc];
 }
@@ -125,7 +135,7 @@ static void UnitySendMessage(
 {
     NSString *url = [[request URL] absoluteString];
     NSString *scheme = [[request URL] scheme];
-    if ([scheme isEqualToString:@"dandg"]) {
+    if (customScheme != nil && [scheme isEqualToString:customScheme]) {
         UnitySendMessage([gameObject UTF8String],
                          "CallFromJS", [url UTF8String]);
         [listener ignore];
@@ -286,7 +296,7 @@ static void UnitySendMessage(
 
 extern "C" {
 void *_WebViewPlugin_Init(
-	const char *gameObject, int width, int height, BOOL inEditor);
+	const char *gameObject, int width, int height, BOOL inEditor, const char *scheme);
 void _WebViewPlugin_Destroy(void *instance);
 void _WebViewPlugin_SetRect(void *instance, int width, int height);
 void _WebViewPlugin_SetVisibility(void *instance, BOOL visibility);
@@ -303,14 +313,14 @@ void UnityRenderEvent(int eventID);
 static NSMutableSet *pool;
 
 void *_WebViewPlugin_Init(
-	const char *gameObject, int width, int height, BOOL ineditor)
+	const char *gameObject, int width, int height, BOOL ineditor, const char *scheme)
 {
 	if (pool == 0)
 		pool = [[NSMutableSet alloc] init];
 
 	inEditor = ineditor;
 	id instance = [[WebViewPlugin alloc]
-		initWithGameObject:gameObject width:width height:height];
+		initWithGameObject:gameObject width:width height:height customScheme:scheme];
 	[pool addObject:[NSValue valueWithPointer:instance]];
 	return (void *)instance;
 }

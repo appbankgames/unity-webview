@@ -121,13 +121,14 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 @interface WebViewPlugin : NSObject<UIWebViewDelegate>
 @property (nonatomic, retain) UIWebView *webView;
 @property (nonatomic, copy) NSString *gameObjectName;
+@property (nonatomic, copy) NSString *customScheme;
 @property (nonatomic, retain) UILabel *label;
 @property (nonatomic, retain) LoadingIndicatorView *loadingIndicatorView;
 @end
 
 @implementation WebViewPlugin
 
-- (id)initWithGameObjectName:(const char *)gameObjectName_
+- (id)initWithGameObjectName:(const char *)gameObjectName_ customScheme:(const char *)scheme
 {
     self = [super init];
     if (self) {
@@ -141,6 +142,14 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
         [view addSubview:self.webView];
         
         self.gameObjectName = [NSString stringWithUTF8String:gameObjectName_];
+        if(scheme != NULL)
+        {
+            self.customScheme = [NSString stringWithUTF8String:scheme];
+        }
+        else
+        {
+            self.customScheme = nil;
+        }
     }
     
     return self;
@@ -163,7 +172,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     
     NSString *url = [[request URL] absoluteString];
     NSString *scheme = [[request URL] scheme];
-    if ([scheme isEqualToString:@"dandg"]) {
+    if (customScheme != nil && [scheme isEqualToString:customScheme]) {
         UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [url UTF8String]);
         return NO;
@@ -319,7 +328,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 #pragma mark - Unity Plugin
 
 extern "C" {
-    void *_WebViewPlugin_Init(const char *gameObjectName);
+    void *_WebViewPlugin_Init(const char *gameObjectName, const char *scheme);
     void _WebViewPlugin_Destroy(void *instance);
     void _WebViewPlugin_LoadURL(void *instance, const char *url);
     void _WebViewPlugin_ReloadURL(void* instance);
@@ -334,9 +343,9 @@ extern "C" {
     void _WebViewPlugin_SetMargins(void *instance, NSInteger left, NSInteger top, NSInteger right, NSInteger bottom);
 }
 
-void *_WebViewPlugin_Init(const char *gameObjectName)
+void *_WebViewPlugin_Init(const char *gameObjectName, const char *scheme)
 {
-    id instance = [[WebViewPlugin alloc] initWithGameObjectName:gameObjectName];
+    id instance = [[WebViewPlugin alloc] initWithGameObjectName:gameObjectName customScheme:scheme];
     return (void *)instance;
 }
 

@@ -65,7 +65,7 @@ public class WebViewObject : MonoBehaviour
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 	[DllImport("WebView")]
 	private static extern IntPtr _WebViewPlugin_Init(
-		string gameObject, int width, int height, bool ineditor);
+		string gameObject, int width, int height, bool ineditor, string scheme);
 	[DllImport("WebView")]
 	private static extern int _WebViewPlugin_Destroy(IntPtr instance);
 	[DllImport("WebView")]
@@ -93,7 +93,7 @@ public class WebViewObject : MonoBehaviour
 	
 #elif UNITY_IPHONE
 	[DllImport("__Internal")]
-	private static extern IntPtr _WebViewPlugin_Init(string gameObject);
+	private static extern IntPtr _WebViewPlugin_Init(string gameObject, string scheme);
 	[DllImport("__Internal")]
 	private static extern int _WebViewPlugin_Destroy(IntPtr instance);
 	[DllImport("__Internal")]
@@ -143,17 +143,17 @@ public class WebViewObject : MonoBehaviour
 	}
 #endif
 
-	public void Init(Callback cb, OnFinishCallback finishcb, OnFailCallback failcb)
+	public void Init(Callback cb, OnFinishCallback finishcb, OnFailCallback failcb, string scheme=null)
 	{
 		callback = cb;
 		onFinishCallback = finishcb;
 		onFailCallback = failcb;
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
 		CreateTexture(0, 0, Screen.width/2, Screen.height/2);
-		webView = _WebViewPlugin_Init(name, Screen.width, Screen.height,
-			Application.platform == RuntimePlatform.OSXEditor);
+		webView = _WebViewPlugin_Init(name, Screen.width, Screen.height, 
+			Application.platform == RuntimePlatform.OSXEditor, scheme);
 #elif UNITY_IPHONE
-		webView = _WebViewPlugin_Init(name);
+		webView = _WebViewPlugin_Init(name, scheme);
 #elif UNITY_ANDROID
 		offset = new Vector2(0, 0);
 		webView = new AndroidJavaObject("net.gree.unitywebview.WebViewPlugin");
