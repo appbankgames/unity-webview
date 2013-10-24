@@ -47,13 +47,82 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 }
 @end
 
+#pragma mark - LoadingIndicatorView
+
+@interface LoadingIndicatorView : UIView
+
+@property (nonatomic, assign) CGFloat cornerRadius;
+@property (nonatomic, retain) UIColor *color;
+@property (nonatomic, retain) UILabel *label;
+
+@end
+
+@implementation LoadingIndicatorView
+
+- (id)initWithFrame:(CGRect)frame scale:(CGFloat)scale
+{
+	self = [super initWithFrame:frame];
+	if(self)
+	{
+		self.backgroundColor = [UIColor clearColor];
+		self.opaque = NO;
+		self.autoresizesSubviews = YES;
+		self.color = [UIColor colorWithWhite:0.0f alpha:0.4f];
+		self.cornerRadius = 8.0f * scale;
+		
+		UIActivityIndicatorView *indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
+		indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
+		indicator.transform = CGAffineTransformMakeScale(scale, scale);
+		[indicator startAnimating];
+		[self addSubview:indicator];
+
+		self.label = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
+		self.label.text = @"Loading...";
+		self.label.textAlignment = UITextAlignmentCenter;
+		self.label.font = [UIFont boldSystemFontOfSize:12.0f * scale];
+		self.label.textColor = [UIColor whiteColor];
+		self.label.backgroundColor = [UIColor clearColor];
+		[self addSubview:self.label];
+
+		CGFloat margin = 2.0f * scale;
+		CGSize indicatorSize = CGSizeApplyAffineTransform(indicator.bounds.size, indicator.transform);
+		CGSize labelSize = [self.label.text sizeWithFont:self.label.font];
+		CGFloat h = indicatorSize.height + margin + labelSize.height;
+		indicator.center = CGPointMake(self.bounds.size.width * 0.5f, self.bounds.size.height * 0.5f - h * 0.5f + indicatorSize.height * 0.5f);
+		self.label.frame = CGRectMake(0.0f, indicator.center.y + indicatorSize.height * 0.5f + margin, self.bounds.size.width, labelSize.height);
+	}
+	return self;
+}
+
+- (void)dealloc
+{
+	self.color = nil;
+	self.label = nil;
+	[super dealloc];
+}
+
+- (void)drawRect:(CGRect)rect
+{
+	CGContextRef context = UIGraphicsGetCurrentContext();
+	CGContextSetFillColorWithColor(context, self.color.CGColor);
+	CGContextMoveToPoint(context, CGRectGetMinX(self.bounds), CGRectGetMaxY(self.bounds) - self.cornerRadius);
+	CGContextAddArcToPoint(context, CGRectGetMinX(self.bounds), CGRectGetMinY(self.bounds), CGRectGetMidX(self.bounds), CGRectGetMinY(self.bounds), self.cornerRadius);
+	CGContextAddArcToPoint(context, CGRectGetMaxX(self.bounds), CGRectGetMinY(self.bounds), CGRectGetMaxX(self.bounds), CGRectGetMidY(self.bounds), self.cornerRadius);
+	CGContextAddArcToPoint(context, CGRectGetMaxX(self.bounds), CGRectGetMaxY(self.bounds), CGRectGetMidX(self.bounds), CGRectGetMaxY(self.bounds), self.cornerRadius);
+	CGContextAddArcToPoint(context, CGRectGetMinX(self.bounds), CGRectGetMaxY(self.bounds), CGRectGetMinX(self.bounds), CGRectGetMidY(self.bounds), self.cornerRadius);
+	CGContextClosePath(context);
+	CGContextFillPath(context);
+}
+
+@end
+
 #pragma mark - Objective-C Implementation
 
 @interface WebViewPlugin : NSObject<UIWebViewDelegate>
 @property (nonatomic, retain) UIWebView *webView;
 @property (nonatomic, copy) NSString *gameObjectName;
-@property (nonatomic, retain) UIActivityIndicatorView *indicator;
 @property (nonatomic, retain) UILabel *label;
+@property (nonatomic, retain) LoadingIndicatorView *loadingIndicatorView;
 @end
 
 @implementation WebViewPlugin
@@ -66,6 +135,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
         self.webView = [[[UIWebView alloc] initWithFrame:view.frame] autorelease];
         self.webView.delegate = self;
         self.webView.hidden = YES;
+        self.webView.dataDetectorTypes = UIDataDetectorTypeNone;
         self.webView.ABG_scrollView.alwaysBounceVertical = NO;
         [self setScrollable:NO];
         [view addSubview:self.webView];
@@ -78,18 +148,19 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)dealloc
 {
-    self.indicator = nil;
     self.webView.delegate = nil;
     [self.webView stopLoading];
     [self.webView removeFromSuperview];
     self.webView = nil;
     self.gameObjectName = nil;
-    self.label = nil;
+	self.loadingIndicatorView = nil;
     [super dealloc];
 }
 
 - (BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
 {
+    [[NSURLCache sharedURLCache] removeAllCachedResponses];
+    
     NSString *url = [[request URL] absoluteString];
     NSString *scheme = [[request URL] scheme];
     if ([scheme isEqualToString:@"dandg"]) {
@@ -117,42 +188,22 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (void)webViewDidStartLoad:(UIWebView *)webView
 {
     self.webView.ABG_scrollView.hidden = YES;
-    if(!self.indicator){
-        self.indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
-        self.indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
-        [self.webView addSubview:self.indicator];
-        self.indicator.center = CGPointMake(self.webView.bounds.size.width * 0.5f, self.webView.bounds.size.height * 0.6f);
-        [self.indicator startAnimating];
-    }
-    if(!self.label){
-        self.label = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
-        [self.webView addSubview:self.label];
-        self.label.text = @"Loading...";
-		
-		UIFont *font = [UIFont boldSystemFontOfSize:20.0f];
-		CGSize size = [self.label.text sizeWithFont:font];
-		CGFloat margin = 4.0f;
-		self.label.frame = CGRectMake(0.0f, self.indicator.frame.origin.y - margin - size.height, self.webView.bounds.size.width, size.height);
-		
-        [self setLabelStatusWithColor:[UIColor whiteColor]
-                      BackGroundColor:[UIColor colorWithWhite:1.0f alpha:0]
-                            Alignment:UITextAlignmentCenter
-                                 Font:font];
-        CGSize offset;
-        offset.width = 1.0f;
-        offset.height = 1.0f;
-        [self setLabelShadowWithColor:[UIColor blackColor] Offset:offset];
-    }
+	
+	if(!self.loadingIndicatorView)
+	{
+		CGFloat scale = ((UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad)? 2.0f: 1.0f);
+		CGFloat width = 88.0f * scale;
+		CGFloat height = 88.0f * scale;
+		self.loadingIndicatorView = [[[LoadingIndicatorView alloc] initWithFrame:CGRectMake(self.webView.bounds.size.width * 0.5f - width * 0.5f, self.webView.bounds.size.height * 0.5f - height * 0.5f, width, height) scale:scale] autorelease];
+		[self.webView addSubview:self.loadingIndicatorView];
+	}
 }
 
 - (void)webViewDidFinishLoad:(UIWebView *)webView
 {
     self.webView.ABG_scrollView.hidden = NO;
-    [self.indicator stopAnimating];
-    [self.indicator removeFromSuperview];
-    [self.label removeFromSuperview];
-    self.label = nil;
-    self.indicator = nil;
+	[self.loadingIndicatorView removeFromSuperview];
+	self.loadingIndicatorView = nil;
     
     UnitySendMessage([self.gameObjectName UTF8String],
                      "CallOnFinish",
@@ -162,11 +213,8 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 - (void)webView:(UIWebView *)webView didFailLoadWithError:(NSError *)error
 {
     self.webView.ABG_scrollView.hidden = NO;
-    [self.indicator stopAnimating];
-    [self.indicator removeFromSuperview];
-    [self.label removeFromSuperview];
-    self.label = nil;
-    self.indicator = nil;
+	[self.loadingIndicatorView removeFromSuperview];
+	self.loadingIndicatorView = nil;
     
     NSString *message = [NSString stringWithFormat:@"%d|%@|%@", error.code, error.domain, error.localizedDescription];
     UnitySendMessage([self.gameObjectName UTF8String],
@@ -176,12 +224,15 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 - (void)loadURL:(const char *)url
 {
+    if(self.webView.request.mainDocumentURL != nil)
+    {
+    	[self.webView stringByEvaluatingJavaScriptFromString:@"document.body.innerHTML=\"\";"];
+    }
+
     NSString *urlStr = [NSString stringWithUTF8String:url];
     NSURL *nsurl = [NSURL URLWithString:urlStr];
     
-    NSURLRequest *request = [NSURLRequest requestWithURL:[NSURL URLWithString:@"about:blank"]];
-    [self.webView loadRequest:request];
-    request = [NSURLRequest requestWithURL:nsurl];
+    NSURLRequest *request = [NSURLRequest requestWithURL:nsurl];
     [self.webView loadRequest:request];
 }
 
