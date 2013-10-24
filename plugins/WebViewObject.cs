@@ -54,9 +54,12 @@ public class WebViewObject : MonoBehaviour
 	string inputString;
 #elif UNITY_IPHONE
 	IntPtr webView;
+	bool visibility;
+
 #elif UNITY_ANDROID
 	AndroidJavaObject webView;
 	Vector2 offset;
+	bool visibility;
 #endif
 
 #if UNITY_EDITOR || UNITY_STANDALONE_OSX
@@ -75,6 +78,9 @@ public class WebViewObject : MonoBehaviour
 		IntPtr instance, string url);
 	[DllImport("WebView")]
 	private static extern void _WebViewPlugin_ReloadURL(
+		IntPtr instance);
+	[DllImport("WebView")]
+	private static extern void _WebViewPlugin_ClearContent(
 		IntPtr instance);
 	[DllImport("WebView")]
 	private static extern void _WebViewPlugin_EvaluateJS(
@@ -104,6 +110,9 @@ public class WebViewObject : MonoBehaviour
 		IntPtr instance, string url);
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_ReloadURL(
+		IntPtr instance);
+	[DllImport("__Internal")]
+	private static extern void _WebViewPlugin_ClearContent(
 		IntPtr instance);
 	[DllImport("__Internal")]
 	private static extern void _WebViewPlugin_EvaluateJS(
@@ -286,12 +295,19 @@ public class WebViewObject : MonoBehaviour
 #elif UNITY_IPHONE
 		if (webView == IntPtr.Zero)
 			return;
+		visibility = v;
 		_WebViewPlugin_SetVisibility(webView, v);
 #elif UNITY_ANDROID
 		if (webView == null)
 			return;
+		visibility = v;
 		webView.Call("SetVisibility", v);
 #endif
+	}
+
+	public bool GetVisibility()
+	{
+		return visibility;
 	}
 
 	public void LoadURL(string url)
@@ -312,6 +328,18 @@ public class WebViewObject : MonoBehaviour
 		if (webView == IntPtr.Zero)
 			return;
 		_WebViewPlugin_ReloadURL(webView);
+#elif UNITY_ANDROID
+		if (webView == null)
+			return;
+		// TODO: Not implemented in Android
+#endif
+	}
+
+	public void ClearContent(){
+#if UNITY_EDITOR || UNITY_STANDALONE_OSX || UNITY_IPHONE
+		if (webView == IntPtr.Zero)
+			return;
+		_WebViewPlugin_ClearContent(webView);
 #elif UNITY_ANDROID
 		if (webView == null)
 			return;

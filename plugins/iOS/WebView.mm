@@ -121,17 +121,23 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
         self.indicator = [[[UIActivityIndicatorView alloc] initWithActivityIndicatorStyle:UIActivityIndicatorViewStyleWhiteLarge] autorelease];
         self.indicator.activityIndicatorViewStyle = UIActivityIndicatorViewStyleWhiteLarge;
         [self.webView addSubview:self.indicator];
-        self.indicator.center = self.webView.center;
+        self.indicator.center = CGPointMake(self.webView.bounds.size.width * 0.5f, self.webView.bounds.size.height * 0.6f);
         [self.indicator startAnimating];
     }
     if(!self.label){
-        self.label = [[[UILabel alloc] initWithFrame:CGRectMake(0, 0, self.webView.bounds.size.width, self.webView.bounds.size.height * 0.7f)] autorelease];
+        self.label = [[[UILabel alloc] initWithFrame:CGRectZero] autorelease];
         [self.webView addSubview:self.label];
         self.label.text = @"Loading...";
+		
+		UIFont *font = [UIFont boldSystemFontOfSize:20.0f];
+		CGSize size = [self.label.text sizeWithFont:font];
+		CGFloat margin = 4.0f;
+		self.label.frame = CGRectMake(0.0f, self.indicator.frame.origin.y - margin - size.height, self.webView.bounds.size.width, size.height);
+		
         [self setLabelStatusWithColor:[UIColor whiteColor]
                       BackGroundColor:[UIColor colorWithWhite:1.0f alpha:0]
                             Alignment:UITextAlignmentCenter
-                                 Font:[UIFont fontWithName:@"HiraKakuProN-W6" size:16.0f]];
+                                 Font:font];
         CGSize offset;
         offset.width = 1.0f;
         offset.height = 1.0f;
@@ -181,6 +187,11 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
 
 -(void)reloadURL{
     [self.webView reload];
+}
+
+- (void)clearContent
+{
+	[self.webView loadHTMLString:@"<html><body style=\"background:transparent;\"></body></html>" baseURL:nil];
 }
 
 - (void)evaluateJS:(const char *)js
@@ -261,6 +272,7 @@ extern "C" {
     void _WebViewPlugin_Destroy(void *instance);
     void _WebViewPlugin_LoadURL(void *instance, const char *url);
     void _WebViewPlugin_ReloadURL(void* instance);
+	void _WebViewPlugin_ClearContent(void* instance);
     void _WebViewPlugin_EvaluateJS(void *instance, const char *url);
     void _WebViewPlugin_SetVisibility(void *instance, BOOL visibility);
     void _WebViewPlugin_SetBackgroundColor(void* instance,CGFloat r,CGFloat g,CGFloat b,CGFloat a,BOOL opaque);
@@ -291,6 +303,11 @@ void _WebViewPlugin_LoadURL(void *instance, const char *url)
 void _WebViewPlugin_ReloadURL(void* instance){
     WebViewPlugin* webViewPlugin = (WebViewPlugin*) instance;
     [webViewPlugin reloadURL];
+}
+
+void _WebViewPlugin_ClearContent(void* instance){
+    WebViewPlugin* webViewPlugin = (WebViewPlugin*) instance;
+    [webViewPlugin clearContent];
 }
 
 void _WebViewPlugin_EvaluateJS(void *instance, const char *js)

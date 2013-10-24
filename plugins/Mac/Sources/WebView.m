@@ -175,6 +175,11 @@ static void UnitySendMessage(
     [[webView mainFrame] reload];
 }
 
+- (void)clearContent
+{
+	[[webView mainFrame] loadHTMLString:@"<html><body style=\"background:transparent;\"></body></html>" baseURL:nil];
+}
+
 - (void)evaluateJS:(const char *)js
 {
 	NSString *jsStr = [NSString stringWithUTF8String:js];
