@@ -172,7 +172,7 @@ extern "C" void UnitySendMessage(const char *, const char *, const char *);
     
     NSString *url = [[request URL] absoluteString];
     NSString *scheme = [[request URL] scheme];
-    if (customScheme != nil && [scheme isEqualToString:customScheme]) {
+    if (self.customScheme != nil && [scheme isEqualToString:self.customScheme]) {
         UnitySendMessage([self.gameObjectName UTF8String],
                          "CallFromJS", [url UTF8String]);
         return NO;
